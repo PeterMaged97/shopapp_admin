@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shop_app_admin/screens/add_product_page.dart';
 import '../db/category.dart';
 import '../db/brand.dart';
 
@@ -55,7 +56,6 @@ class _AdminState extends State<Admin> {
             ],
           ),
           elevation: 0.0,
-          backgroundColor: Colors.white,
         ),
         body: _loadScreen());
   }
@@ -80,7 +80,7 @@ class _AdminState extends State<Admin> {
               title: Text(
                 'Revenue',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24.0, color: Colors.grey),
+                //style: TextStyle(fontSize: 24.0, color: Colors.grey),
               ),
             ),
             Expanded(
@@ -110,7 +110,7 @@ class _AdminState extends State<Admin> {
                           title: FlatButton.icon(
                               onPressed: null,
                               icon: Icon(Icons.category),
-                              label: Text("Categories")),
+                              label: Flexible(child: Text("Categories"))),
                           subtitle: Text(
                             '23',
                             textAlign: TextAlign.center,
@@ -190,7 +190,9 @@ class _AdminState extends State<Admin> {
             ListTile(
               leading: Icon(Icons.add),
               title: Text("Add product"),
-              onTap: () {},
+              onTap: () {
+                Navigator.push((context), MaterialPageRoute(builder: (context) => AddProduct()));
+              },
             ),
             Divider(),
             ListTile(

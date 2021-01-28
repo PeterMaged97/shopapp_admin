@@ -34,7 +34,8 @@ dev_dependencies:
   fluttertoast: ^7.1.6
   shared_preferences: ^0.5.12+4
   firebase_core: ^0.7.0
-  #image_picker: ^0.4.10
+  image_picker: ^0.6.7+21
+  flex_color_scheme: ^1.4.0
   uuid:
   firebase_database: ^6.0.0
 
