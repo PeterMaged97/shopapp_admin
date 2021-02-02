@@ -10,8 +10,9 @@ class BrandService{
     String brandId = id.v1();
 
     _firestore.collection(ref).doc(brandId).set({'brand': name});
-    Future<List<DocumentSnapshot>> getBrands(){
-      return _firestore.collection(ref).get().then((snaps) => snaps.docs);
-    }
+  }
+
+  Future<List<DocumentSnapshot>> getBrands(){
+    return _firestore.collection(ref).get().then((snaps) => snaps.docs);
   }
 }
