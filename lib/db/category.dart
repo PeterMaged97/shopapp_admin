@@ -17,8 +17,4 @@ class CategoryService{
     print(data.length);
     return data;
   }
-
-  Future<List<DocumentSnapshot>> getSuggestions(String suggestion) async{
-    return _firestore.collection(ref).where('category', arrayContains: suggestion).get().then((snap) => snap.docs);
-  }
 }

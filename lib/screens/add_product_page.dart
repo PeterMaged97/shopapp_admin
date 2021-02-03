@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:shop_app_admin/db/brand.dart';
 import 'package:shop_app_admin/db/category.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 class AddProduct extends StatefulWidget {
   @override
@@ -22,6 +24,7 @@ class _AddProductState extends State<AddProduct> {
   List<DropdownMenuItem<String>> brandsDropDown = <DropdownMenuItem<String>>[];
   String selectedCategory;
   String selectedBrand;
+  List<String> selectedSizes = <String>[];
 
   @override
   void initState() {
@@ -87,36 +90,42 @@ class _AddProductState extends State<AddProduct> {
         body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 150,
-                      child: Icon(Icons.add),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+              padding: const EdgeInsets.only(top: 8),
+              child: Text('Product Images', textAlign: TextAlign.center, style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 18),),
+            ),
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 150,
+                        child: Icon(Icons.add),
+                        decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 15,),
-                  Expanded(
-                    child: Container(
-                      height: 150,
-                      child: Icon(Icons.add),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+                    SizedBox(width: 15,),
+                    Expanded(
+                      child: Container(
+                        height: 150,
+                        child: Icon(Icons.add),
+                        decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 15,),
-                  Expanded(
-                    child: Container(
-                      height: 150,
-                      child: Icon(Icons.add),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
-                    ),
-                  )
-                ],
+                    SizedBox(width: 15,),
+                    Expanded(
+                      child: Container(
+                        height: 150,
+                        child: Icon(Icons.add),
+                        decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
-            Divider(),
+            //Divider(color: Colors.black, thickness: 2,),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Form(
@@ -125,16 +134,8 @@ class _AddProductState extends State<AddProduct> {
                   children: [
                     TextFormField(
                       decoration: InputDecoration(
-                        border: InputBorder.none,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(0.0)),
-                          borderSide: BorderSide(color: Colors.black),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(0.0)),
-                          borderSide: BorderSide(color: Colors.black),
-                        ),
                           hintText: 'Product Name',
+                          fillColor: Colors.white
                           ),
                       //controller: _passwordEditingController,
                       //obscureText: !showPassword,
@@ -147,14 +148,89 @@ class _AddProductState extends State<AddProduct> {
                         return null;
                       },
                     ),
-                    DropdownButtonFormField(items: categoriesDropDown,
-                        value: selectedCategory,
-                        onChanged: changeSelectedCategory
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Row(
+                        //mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(child: Text('Category: ', textAlign: TextAlign.center, style: TextStyle(color: Colors.red),),),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField(items: categoriesDropDown,
+                                value: selectedCategory,
+                                decoration: InputDecoration(
+                                    fillColor: Colors.white
+                                ),
+                                onChanged: changeSelectedCategory
+                            ),
+                          ),
+                          Expanded(child: Text('Brand: ', textAlign: TextAlign.center, style: TextStyle(color: Colors.red))),
+                          Expanded(
+                            flex: 2,
+                            child: DropdownButtonFormField(items: brandsDropDown,
+                                value: selectedBrand,
+                                decoration: InputDecoration(
+                                    fillColor: Colors.white
+                                ),
+                                onChanged: changeSelectedBrand
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    DropdownButtonFormField(items: brandsDropDown,
-                        value: selectedBrand,
-                        onChanged: changeSelectedBrand
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: TextFormField(
+                        decoration: InputDecoration(
+                            hintText: 'Quantity',
+                            fillColor: Colors.white
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                        ],
+                        validator: (value) {
+                          if (value.isEmpty) {
+                            return 'You must enter a quantity';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text('Available Sizes', style: TextStyle(color: Colors.red),),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('S'), onChanged: (value)=> changeSelectedState('S')),
+                            Text('S')
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('M'), onChanged: (value)=> changeSelectedState('M')),
+                            Text('M')
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('L'), onChanged: (value)=> changeSelectedState('L')),
+                            Text('L')
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('XL'), onChanged: (value)=> changeSelectedState('XL')),
+                            Text('XL')
+                          ],
+                        ),
+
+                      ],
+                    )
                   ],
                 ),
               ),
@@ -174,6 +250,19 @@ class _AddProductState extends State<AddProduct> {
     setState(() {
       selectedBrand = brand;
     });
+  }
+
+  changeSelectedState(String s) {
+    if(selectedSizes.contains(s)){
+      setState(() {
+        selectedSizes.remove(s);
+      });
+    }else{
+      setState(() {
+        selectedSizes.add(s);
+      });
+    }
+    print(selectedSizes);
   }
 
 }
