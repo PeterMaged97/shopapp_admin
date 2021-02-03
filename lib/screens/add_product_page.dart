@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
@@ -18,6 +20,7 @@ class _AddProductState extends State<AddProduct> {
   BrandService _brandService = BrandService();
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextEditingController productNameController = TextEditingController();
+  TextEditingController quantityController = TextEditingController();
   List<DocumentSnapshot> brands = <DocumentSnapshot>[];
   List<DocumentSnapshot> categories = <DocumentSnapshot>[];
   List<DropdownMenuItem<String>> categoriesDropDown = <DropdownMenuItem<String>>[];
@@ -25,6 +28,8 @@ class _AddProductState extends State<AddProduct> {
   String selectedCategory;
   String selectedBrand;
   List<String> selectedSizes = <String>[];
+  List<File> images = List<File>(3);
+  Widget defaultOutlineButtonChild = Container(child: Icon(Icons.add), height: 150, decoration: BoxDecoration(border: Border.all()),);
 
   @override
   void initState() {
@@ -99,26 +104,102 @@ class _AddProductState extends State<AddProduct> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        height: 150,
-                        child: Icon(Icons.add),
-                        decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+                      child: InkWell(
+                        onTap: (){
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Source"),
+                                content: Text("Choose image source"),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    child: Text("Gallery"),
+                                    onPressed: () {
+                                      selectImage(ImagePicker().getImage(source: ImageSource.gallery), 0);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  FlatButton(
+                                    child: Text("Camera"),
+                                    onPressed: () {
+                                      selectImage(ImagePicker().getImage(source: ImageSource.camera), 0);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        //borderSide: BorderSide(color: Colors.grey, width: 2.5),
+                        child: images[0] == null ? defaultOutlineButtonChild : Container(child: Image.file(images[0]), height: 150, decoration: BoxDecoration(border: Border.all()),)
                       ),
                     ),
                     SizedBox(width: 15,),
                     Expanded(
-                      child: Container(
-                        height: 150,
-                        child: Icon(Icons.add),
-                        decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+                      child: InkWell(
+                        onTap: (){
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Source"),
+                                content: Text("Choose image source"),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    child: Text("Gallery"),
+                                    onPressed: () {
+                                      selectImage(ImagePicker().getImage(source: ImageSource.gallery), 1);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  FlatButton(
+                                    child: Text("Camera"),
+                                    onPressed: () {
+                                      selectImage(ImagePicker().getImage(source: ImageSource.camera), 1);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: images[1] == null ? defaultOutlineButtonChild : Container(child: Image.file(images[1]), height: 150, decoration: BoxDecoration(border: Border.all()),)
                       ),
                     ),
                     SizedBox(width: 15,),
                     Expanded(
-                      child: Container(
-                        height: 150,
-                        child: Icon(Icons.add),
-                        decoration: BoxDecoration(border: Border.all(color: Colors.black.withOpacity(0.8), width: 1)),
+                      child: InkWell(
+                        onTap: (){
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Source"),
+                                content: Text("Choose image source"),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    child: Text("Gallery"),
+                                    onPressed: () {
+                                      selectImage(ImagePicker().getImage(source: ImageSource.gallery), 2);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  FlatButton(
+                                    child: Text("Camera"),
+                                    onPressed: () {
+                                      selectImage(ImagePicker().getImage(source: ImageSource.camera), 2);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: images[2] == null ? defaultOutlineButtonChild : Container(child: Image.file(images[2]), height: 150,)
                       ),
                     )
                   ],
@@ -181,6 +262,7 @@ class _AddProductState extends State<AddProduct> {
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: TextFormField(
+                        controller: quantityController,
                         decoration: InputDecoration(
                             hintText: 'Quantity',
                             fillColor: Colors.white
@@ -263,6 +345,13 @@ class _AddProductState extends State<AddProduct> {
       });
     }
     print(selectedSizes);
+  }
+
+  void selectImage(Future<PickedFile> image, int index) async{
+    images[index] = File(await image.then((value) => value.path));
+    setState(() {
+
+    });
   }
 
 }
