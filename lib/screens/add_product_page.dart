@@ -2,13 +2,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:shop_app_admin/db/brand.dart';
 import 'package:shop_app_admin/db/category.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:shop_app_admin/db/product.dart';
 
 class AddProduct extends StatefulWidget {
   @override
@@ -17,10 +19,13 @@ class AddProduct extends StatefulWidget {
 
 class _AddProductState extends State<AddProduct> {
   CategoryService _categoryService = CategoryService();
+  bool isLoading = false;
   BrandService _brandService = BrandService();
+  ProductService _productService = ProductService();
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextEditingController productNameController = TextEditingController();
   TextEditingController quantityController = TextEditingController();
+  TextEditingController priceController = TextEditingController();
   List<DocumentSnapshot> brands = <DocumentSnapshot>[];
   List<DocumentSnapshot> categories = <DocumentSnapshot>[];
   List<DropdownMenuItem<String>> categoriesDropDown = <DropdownMenuItem<String>>[];
@@ -73,11 +78,80 @@ class _AddProductState extends State<AddProduct> {
     return items;
   }
 
+  void validateAndUpload() async{
+    print('------------CALLED---------------');
+    if(_formKey.currentState.validate()){
+      setState(() {
+        isLoading = true;
+      });
+      if(images[0] != null && images[1] != null && images[2] != null){
+        if(selectedSizes.isNotEmpty){
+          final FirebaseStorage storage = FirebaseStorage.instance;
+          String imageURL1;
+          String imageURL2;
+          String imageURL3;
+
+          final String picture1 = "1${DateTime.now().millisecondsSinceEpoch.toString()}.jpg";
+          UploadTask task1 = storage.ref().child(picture1).putFile(images[0]);
+
+          final String picture2 = "2${DateTime.now().millisecondsSinceEpoch.toString()}.jpg";
+          UploadTask task2 = storage.ref().child(picture2).putFile(images[1]);
+
+          final String picture3 = "3${DateTime.now().millisecondsSinceEpoch.toString()}.jpg";
+          UploadTask task3 = storage.ref().child(picture3).putFile(images[2]);
+
+          // TaskSnapshot snapshot1 = await task1
+          // TaskSnapshot snapshot2 = await task2.whenComplete(() => null).then((snapshot) => snapshot);
+
+            imageURL1 = await(await task1).ref.getDownloadURL();
+            imageURL2 = await(await task2).ref.getDownloadURL();
+            imageURL3 = await(await task3).ref.getDownloadURL();
+            // imageURL1 = await snapshot1.ref.getDownloadURL();
+            // imageURL2 = await snapshot2.ref.getDownloadURL();
+            // imageURL3 = await snapshot3.ref.getDownloadURL();
+
+          print(imageURL1.toString());
+          print(imageURL2.toString());
+          print(imageURL3.toString());
+
+          _productService.uploadProduct(name: productNameController.text,
+              brand: selectedBrand,
+              category: selectedCategory,
+              sizes: selectedSizes,
+              images: [imageURL1, imageURL2, imageURL3],
+              price: double.parse(priceController.text),
+              quantity: int.parse(quantityController.text));
+          //_formKey.currentState.reset();
+
+          setState(() {
+            isLoading = false;
+          });
+          Navigator.pop(context);
+          Fluttertoast.showToast(msg: 'New product added');
+
+        }else{
+          setState(() {
+            isLoading = false;
+          });
+          Fluttertoast.showToast(msg: 'You must select at least on size');
+        }
+      }else{
+        setState(() {
+          isLoading = false;
+        });
+        Fluttertoast.showToast(msg: 'You must provide 3 images for the product');
+      }
+    }
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return categoriesDropDown.length != 0 && brandsDropDown.length != 0 ? Theme(
       data: FlexColorScheme.light(scheme: FlexScheme.red).toTheme,
-      child: Scaffold(
+      child: isLoading ? Center(child: CircularProgressIndicator()) : Scaffold(
         appBar: AppBar(
           elevation: 10,
           //backgroundColor: Colors.white,
@@ -218,7 +292,7 @@ class _AddProductState extends State<AddProduct> {
                           hintText: 'Product Name',
                           fillColor: Colors.white
                           ),
-                      //controller: _passwordEditingController,
+                      controller: productNameController,
                       //obscureText: !showPassword,
                       validator: (value) {
                         if (value.isEmpty) {
@@ -261,22 +335,48 @@ class _AddProductState extends State<AddProduct> {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
-                      child: TextFormField(
-                        controller: quantityController,
-                        decoration: InputDecoration(
-                            hintText: 'Quantity',
-                            fillColor: Colors.white
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: quantityController,
+                              decoration: InputDecoration(
+                                  hintText: 'Quantity',
+                                  fillColor: Colors.white
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                              ],
+                              validator: (value) {
+                                if (value.isEmpty) {
+                                  return 'You must enter a quantity';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          SizedBox(width: 20),
+                          Expanded(
+                            child: TextFormField(
+                              controller: priceController,
+                              decoration: InputDecoration(
+                                  hintText: 'Price',
+                                  fillColor: Colors.white
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                              ],
+                              validator: (value) {
+                                if (value.isEmpty) {
+                                  return 'You must enter a price';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
                         ],
-                        validator: (value) {
-                          if (value.isEmpty) {
-                            return 'You must enter a quantity';
-                          }
-                          return null;
-                        },
                       ),
                     ),
                     Padding(
@@ -284,35 +384,78 @@ class _AddProductState extends State<AddProduct> {
                       child: Text('Available Sizes', style: TextStyle(color: Colors.red),),
                     ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         Row(
                           children: [
                             Checkbox(value: selectedSizes.contains('S'), onChanged: (value)=> changeSelectedState('S')),
-                            Text('S')
+                            Container(child: Text('S'), width: 30,)
                           ],
                         ),
                         Row(
                           children: [
                             Checkbox(value: selectedSizes.contains('M'), onChanged: (value)=> changeSelectedState('M')),
-                            Text('M')
+                            Container(child: Text('M'), width: 30,)
                           ],
                         ),
                         Row(
                           children: [
                             Checkbox(value: selectedSizes.contains('L'), onChanged: (value)=> changeSelectedState('L')),
-                            Text('L')
+                            Container(child: Text('L'), width: 30,)
                           ],
                         ),
                         Row(
                           children: [
                             Checkbox(value: selectedSizes.contains('XL'), onChanged: (value)=> changeSelectedState('XL')),
-                            Text('XL')
+                            Container(child: Text('XL'), width: 30,)
                           ],
                         ),
-
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('XL'), onChanged: (value)=> changeSelectedState('XL')),
+                            Container(child: Text('XXL'), width: 30,)
+                          ],
+                        ),
                       ],
-                    )
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('30'), onChanged: (value)=> changeSelectedState('30')),
+                            Container(child: Text('30'), width: 30,)
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('32'), onChanged: (value)=> changeSelectedState('32')),
+                            Container(child: Text('32'), width: 30,)
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('34'), onChanged: (value)=> changeSelectedState('34')),
+                            Container(child: Text('34'), width: 30,)
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('36'), onChanged: (value)=> changeSelectedState('36')),
+                            Container(child: Text('36'), width: 30,)
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Checkbox(value: selectedSizes.contains('38'), onChanged: (value)=> changeSelectedState('38')),
+                            Container(child: Text('38'), width: 30,)
+                          ],
+                        ),
+                      ],
+                    ),
+                    MaterialButton(onPressed: validateAndUpload,
+                    child: Text('Add Product'),
+                    color: Colors.red,),
                   ],
                 ),
               ),
