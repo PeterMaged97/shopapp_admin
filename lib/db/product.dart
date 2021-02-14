@@ -14,7 +14,9 @@ class ProductService{
         @required List sizes,
         @required List images,
         @required double price,
-        @required int quantity
+        @required int quantity,
+        @required bool onSale,
+        @required bool featured,
       })
   {
     var id = Uuid();
@@ -29,6 +31,9 @@ class ProductService{
         'images': images,
         'price': price,
         'quantity': quantity,
+        'on sale': onSale,
+        'featured': featured,
+        'id': productId,
       }
     );
   }
